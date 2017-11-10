@@ -57,6 +57,8 @@ public:
   {
     IMAGE = 0,
     CLOUD,
+    DEPTH,
+    COLOR,
     BOTH
   };
 
@@ -173,10 +175,16 @@ private:
       cloudViewer();
       break;
     case IMAGE:
-      imageViewer();
+      imageViewer(Mode::IMAGE);
       break;
+      case COLOR:
+        imageViewer(Mode::COLOR);
+        break;
+      case DEPTH:
+        imageViewer(Mode::DEPTH);
+        break;
     case BOTH:
-      imageViewerThread = std::thread(&Receiver::imageViewer, this);
+      imageViewerThread = std::thread(&Receiver::imageViewer, this, Mode::IMAGE);
       cloudViewer();
       break;
     }
@@ -233,7 +241,7 @@ private:
     lock.unlock();
   }
 
-  void imageViewer()
+  void imageViewer(Mode mode)
   {
     cv::Mat color, depth, depthDisp, combined;
     std::chrono::time_point<std::chrono::high_resolution_clock> start, now;
@@ -277,7 +285,14 @@ private:
         //combined = color;
 
         cv::putText(combined, oss.str(), pos, font, sizeText, colorText, lineText, CV_AA);
-        cv::imshow("Image Viewer", combined);
+        if(mode == Mode::IMAGE) {
+            cv::imshow("Color Viewer", color);
+            cv::imshow("Depth Viewer", depth);
+        }else if(mode == Mode::COLOR){
+          cv::imshow("Color Viewer", color);
+        }else if (mode ==Mode::DEPTH){
+          cv::imshow("Depth Viewer", depth);
+        }
       }
 
       int key = cv::waitKey(1);
@@ -593,6 +608,12 @@ int main(int argc, char **argv)
     else if(param == "cloud")
     {
       mode = Receiver::CLOUD;
+    }
+    else if(param == "depth"){
+      mode = Receiver::DEPTH;
+    }
+    else if(param =="color"){
+      mode = Receiver::COLOR;
     }
     else if(param == "both")
     {
